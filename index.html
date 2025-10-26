@@ -5431,6 +5431,27 @@
             }
         }
 
+        // Check if running on HTTPS (required for secure cookies)
+        function checkHTTPSStatus() {
+            const isHTTPS = window.location.protocol === 'https:';
+            const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            
+            console.log('🔒 HTTPS Status:', {
+                protocol: window.location.protocol,
+                hostname: window.location.hostname,
+                isHTTPS: isHTTPS,
+                isLocalhost: isLocalhost,
+                secureCookiesSupported: isHTTPS || isLocalhost
+            });
+            
+            if (!isHTTPS && !isLocalhost) {
+                console.warn('⚠️ WARNING: Not running on HTTPS. Secure cookies may not work.');
+                alert('⚠️ WARNING: Not running on HTTPS. Secure cookies may not work properly.\n\nConsider:\n1. Using HTTPS for your frontend\n2. Or testing on localhost');
+            }
+            
+            return { isHTTPS, isLocalhost };
+        }
+
         // Authentication API Functions
         async function apiRequest(endpoint, options = {}) {
             const url = `${API_BASE_URL}${endpoint}`;
@@ -5456,7 +5477,9 @@
                 method: config.method || 'GET',
                 headers: config.headers,
                 credentials: config.credentials,
-                body: config.body ? JSON.parse(config.body) : null
+                body: config.body ? JSON.parse(config.body) : null,
+                origin: window.location.origin,
+                targetOrigin: new URL(url).origin
             });
             
             try {
@@ -5689,6 +5712,9 @@
 
         // Initialize authentication on page load
         function initializeAuth() {
+            // Check HTTPS status first
+            checkHTTPSStatus();
+            
             // Check for existing cookies
             const cookies = checkCookies();
             if (cookies) {
@@ -5711,11 +5737,20 @@
         // Add cookie check button to login screen
         function addCookieCheckButton() {
             const loginScreen = document.getElementById('login-screen');
+            
+            // Cookie check button
             const cookieCheckBtn = document.createElement('button');
             cookieCheckBtn.textContent = 'Check Cookies';
-            cookieCheckBtn.className = 'mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600';
+            cookieCheckBtn.className = 'mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 mr-2';
             cookieCheckBtn.onclick = displayCookiesInAlert;
             loginScreen.appendChild(cookieCheckBtn);
+            
+            // Cookie connectivity test button
+            const connectivityTestBtn = document.createElement('button');
+            connectivityTestBtn.textContent = 'Test Cookie Connectivity';
+            connectivityTestBtn.className = 'mt-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600';
+            connectivityTestBtn.onclick = testCookieConnectivity;
+            loginScreen.appendChild(connectivityTestBtn);
         }
 
         // Initialize when page loads
