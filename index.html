@@ -5415,10 +5415,27 @@
             }
         }
 
+        // Cookie Management Functions
+        function checkCookies() {
+            const cookies = document.cookie;
+            console.log('🍪 Current cookies:', cookies);
+            return cookies;
+        }
+
+        function displayCookiesInAlert() {
+            const cookies = checkCookies();
+            if (cookies) {
+                alert(`🍪 CURRENT COOKIES:\n${cookies}`);
+            } else {
+                alert('🍪 NO COOKIES FOUND');
+            }
+        }
+
         // Authentication API Functions
         async function apiRequest(endpoint, options = {}) {
             const url = `${API_BASE_URL}${endpoint}`;
             const defaultOptions = {
+                credentials: 'include', // ✅ This ensures cookies are sent and received
                 headers: {
                     'Content-Type': 'application/json'
                 }
@@ -5433,17 +5450,37 @@
                 }
             };
             
+            // Debug logging
+            console.log('🚀 API Request:', {
+                url,
+                method: config.method || 'GET',
+                headers: config.headers,
+                credentials: config.credentials,
+                body: config.body ? JSON.parse(config.body) : null
+            });
+            
             try {
                 const response = await fetch(url, config);
                 
+                console.log('📡 API Response:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    url: response.url,
+                    cookies: document.cookie // Log current cookies
+                });
+                
                 if (!response.ok) {
                     const errorText = await response.text();
+                    console.error('❌ API Error Response:', errorText);
                     throw new Error(`API request failed: ${response.status} ${response.statusText}`);
                 }
                 
-                return await response.json();
+                const data = await response.json();
+                console.log('✅ API Success Response:', data);
+                console.log('🍪 Cookies after request:', document.cookie);
+                return data;
             } catch (error) {
-                console.error('API request error:', error);
+                console.error('💥 API request error:', error);
                 throw error;
             }
         }
@@ -5460,8 +5497,9 @@
                     body: JSON.stringify(requestData)
                 });
                 
-                // Show response in alert
-                alert(`LOGIN RESPONSE:\n${JSON.stringify(response, null, 2)}`);
+                // Show response and cookies in alert
+                const cookies = checkCookies();
+                alert(`LOGIN RESPONSE:\n${JSON.stringify(response, null, 2)}\n\n🍪 COOKIES AFTER LOGIN:\n${cookies || 'No cookies found'}`);
                 
                 if (response.success) {
                     isAuthenticated = true;
@@ -5488,8 +5526,9 @@
                     body: JSON.stringify(sellerData)
                 });
                 
-                // Show response in alert
-                alert(`REGISTER RESPONSE:\n${JSON.stringify(response, null, 2)}`);
+                // Show response and cookies in alert
+                const cookies = checkCookies();
+                alert(`REGISTER RESPONSE:\n${JSON.stringify(response, null, 2)}\n\n🍪 COOKIES AFTER REGISTER:\n${cookies || 'No cookies found'}`);
                 
                 return response;
             } catch (error) {
@@ -5511,8 +5550,9 @@
                     body: JSON.stringify(requestData)
                 });
                 
-                // Show response in alert
-                alert(`OTP VERIFICATION RESPONSE:\n${JSON.stringify(response, null, 2)}`);
+                // Show response and cookies in alert
+                const cookies = checkCookies();
+                alert(`OTP VERIFICATION RESPONSE:\n${JSON.stringify(response, null, 2)}\n\n🍪 COOKIES AFTER OTP VERIFICATION:\n${cookies || 'No cookies found'}`);
                 
                 if (response.success) {
                     // Registration successful, now login automatically
@@ -5645,7 +5685,44 @@
         
         // REMOVED: switchManualTab
         updateDashboardAlerts(); 
-        lucide.createIcons(); 
+        lucide.createIcons();
+
+        // Initialize authentication on page load
+        function initializeAuth() {
+            // Check for existing cookies
+            const cookies = checkCookies();
+            if (cookies) {
+                console.log('🍪 Found existing cookies on page load:', cookies);
+            }
+            
+            // Check for existing user in localStorage
+            const savedUser = localStorage.getItem('user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    isAuthenticated = true;
+                    console.log('👤 Found existing user:', currentUser);
+                } catch (error) {
+                    console.error('Error parsing saved user:', error);
+                }
+            }
+        }
+
+        // Add cookie check button to login screen
+        function addCookieCheckButton() {
+            const loginScreen = document.getElementById('login-screen');
+            const cookieCheckBtn = document.createElement('button');
+            cookieCheckBtn.textContent = 'Check Cookies';
+            cookieCheckBtn.className = 'mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600';
+            cookieCheckBtn.onclick = displayCookiesInAlert;
+            loginScreen.appendChild(cookieCheckBtn);
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeAuth();
+            addCookieCheckButton();
+        }); 
 
     </script>
 </body>
